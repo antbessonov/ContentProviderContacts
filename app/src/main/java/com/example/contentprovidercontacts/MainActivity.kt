@@ -63,7 +63,31 @@ class MainActivity : AppCompatActivity() {
                 val name = cursor.getString(
                     cursor.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME)
                 )
-                val contact = Contact(id, name)
+                val hasPhoneNumber = cursor.getInt(
+                    cursor.getColumnIndexOrThrow(ContactsContract.Contacts.HAS_PHONE_NUMBER)
+                ) > 0
+                val numbers = mutableSetOf<String>()
+                if (hasPhoneNumber) {
+                    val cursorPhone = contentResolver.query(
+                        ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                        null,
+                        ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = " + id,
+                        null,
+                        null
+                    )
+                    while (cursorPhone?.moveToNext() == true) {
+                        val number = cursorPhone.getString(
+                            cursorPhone.getColumnIndexOrThrow(
+                                ContactsContract.CommonDataKinds.Phone.NORMALIZED_NUMBER
+                            )
+                        )
+                        if (number != null) {
+                            numbers.add(number)
+                        }
+                    }
+                    cursorPhone?.close()
+                }
+                val contact = Contact(id, name, numbers)
                 Log.d("MainActivity", contact.toString())
             }
             cursor?.close()
